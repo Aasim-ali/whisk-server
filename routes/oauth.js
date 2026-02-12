@@ -7,15 +7,12 @@ const router = express.Router();
 // @route   GET /api/oauth/google
 // @desc    Initiate Google OAuth flow
 // @access  Public
-router.get('/google', async (req, res) => {
-    try {
-        await passport.authenticate('google', {
-            scope: ['profile', 'email']
-        })(req, res);
-    } catch (error) {
-        console.error('OAuth error:', error);
-        res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
-    }
+router.get('/google', passport.authenticate('google', {
+    scope: ['profile', 'email']
+}));
+
+router.get('/test', (req, res) => {
+    res.send('Test');
 });
 
 // @route   GET /api/oauth/google/callback
