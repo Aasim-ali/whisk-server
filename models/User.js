@@ -21,7 +21,21 @@ const User = sequelize.define('User', {
     },
     password: {
         type: DataTypes.STRING,
+        allowNull: true, // Nullable for Google OAuth users
+    },
+    googleId: {
+        type: DataTypes.STRING,
+        unique: true,
+        allowNull: true,
+    },
+    authProvider: {
+        type: DataTypes.ENUM('local', 'google'),
+        defaultValue: 'local',
         allowNull: false,
+    },
+    profilePicture: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
     credits: {
         type: DataTypes.INTEGER,

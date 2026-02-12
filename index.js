@@ -2,12 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
+import session from 'express-session';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import sequelize from './config/db.js';
 import { User, Plan, Transaction, Session } from './models/index.js';
+import passportConfig from './config/passport.js';
 import authRoutes from './routes/auth.js';
+import oauthRoutes from './routes/oauth.js';
 import paymentRoutes from './routes/payment.js';
 import adminRoutes from './routes/admin.js';
 import plansRoutes from './routes/plans.js';
@@ -29,8 +32,24 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Session middleware (required for Passport)
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'whisk-session-secret-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        maxAge: 1000 * 60 * 60 * 24 * 10 // 10 days
+    }
+}));
+
+// Initialize Passport
+app.use(passportConfig.initialize());
+app.use(passportConfig.session());
+
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/oauth', oauthRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/plans', plansRoutes);
