@@ -55,6 +55,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/plans', plansRoutes);
 app.use('/api/plans', publicPlansRoutes);
 
+app.get('/api/test', (req, res) => {
+    res.send('Test');
+});
+
 app.get('/', (req, res) => {
     res.send('Whisk Bot API is running...');
 });
