@@ -7,9 +7,18 @@ const router = express.Router();
 // @route   GET /api/oauth/google
 // @desc    Initiate Google OAuth flow
 // @access  Public
-router.get('/google', passport.authenticate('google', {
-    scope: ['profile', 'email']
-}));
+// @route   GET /api/oauth/google
+// @desc    Initiate Google OAuth flow
+// @access  Public
+router.get('/google', (req, res, next) => {
+    const isExtension = req.query.extension === 'true';
+    const state = isExtension ? 'extension' : 'web';
+
+    passport.authenticate('google', {
+        scope: ['profile', 'email'],
+        state: state
+    })(req, res, next);
+});
 
 router.get('/test', (req, res) => {
     res.send('Test');
@@ -36,8 +45,9 @@ router.get('/google/callback',
                 profilePicture: req.user.profilePicture
             };
 
-            // Check if request is from extension
-            const isExtension = req.query.extension === 'true';
+            // Check state from callback
+            const state = req.query.state;
+            const isExtension = state === 'extension';
 
             if (isExtension) {
                 // Redirect to extension callback page with token
