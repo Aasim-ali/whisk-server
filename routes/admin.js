@@ -20,7 +20,7 @@ router.get('/dashboard', protect, authorize('admin'), async (req, res) => {
             recentTransactions
         });
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -29,7 +29,7 @@ router.get('/customers', protect, authorize('admin'), async (req, res) => {
         const users = await User.findAll({ order: [['createdAt', 'DESC']] });
         res.json(users);
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -38,7 +38,7 @@ router.get('/transactions', protect, authorize('admin'), async (req, res) => {
         const transactions = await Transaction.findAll({ include: [User], order: [['createdAt', 'DESC']] });
         res.json(transactions);
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -63,7 +63,7 @@ router.post('/login', async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
-})
+});
 
 // Register
 router.post('/register', async (req, res) => {

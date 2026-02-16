@@ -15,6 +15,7 @@ import paymentRoutes from './routes/payment.js';
 import adminRoutes from './routes/admin.js';
 import plansRoutes from './routes/plans.js';
 import publicPlansRoutes from './routes/public_plans.js';
+import forgotPasswordRoutes from './routes/forgotPassword.js';
 
 dotenv.config();
 
@@ -54,6 +55,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/plans', plansRoutes);
 app.use('/api/plans', publicPlansRoutes);
+app.use('/api/auth/forgot-password', forgotPasswordRoutes);
 
 app.get('/api/test', (req, res) => {
     res.send('Test');
@@ -102,6 +104,16 @@ io.on('connection', async (socket) => {
     console.log(`User connected: ${socket.user.email} (Device: ${socket.deviceId})`);
 
     try {
+        // Add at startup
+        setInterval(async () => {
+            const activeSocketIds = Array.from(io.sockets.sockets.keys());
+            await Session.destroy({
+                where: {
+                    socketId: { [Op.notIn]: activeSocketIds }
+                }
+            });
+        }, 5 * 60 * 1000); // Every 5 minutes
+
         const user = socket.user;
         const today = getTodayDateKey();
 
@@ -127,13 +139,11 @@ io.on('connection', async (socket) => {
         const distinctDevices = new Set(activeSessions.map(s => s.deviceId));
 
         // If this device is NOT in the active set, we need to check if we have space
-        if (!distinctDevices.has(socket.deviceId)) {
-            if (distinctDevices.size >= maxDevices) {
-                console.log(`Connection rejected: Device limit reached for ${user.email}`);
-                socket.emit('error', { message: 'Device limit reached. Please disconnect other devices.' });
-                socket.disconnect();
-                return;
-            }
+        if (!distinctDevices.has(socket.deviceId) && distinctDevices.size > maxDevices) {
+            console.log(`Connection rejected: Device limit reached for ${user.email}`);
+            socket.emit('error', { message: 'Device limit reached. Please disconnect other devices.' });
+            socket.disconnect();
+            return;
         }
 
         // 4. Create/Update Session
@@ -157,7 +167,7 @@ io.on('connection', async (socket) => {
             dailyUsage: user.dailyUsage,
             dailyLimit: dailyLimit,
             planName: user.Plan ? user.Plan.name : 'Free Tier',
-            firstName: user.name.split(' ')[0]
+            firstName: user.name?.split(' ')[0] || user.name,
         });
 
         // Event: Task Complete (Image Generated)
@@ -167,7 +177,7 @@ io.on('connection', async (socket) => {
                 const currentUser = await User.findByPk(user.id, { include: [Plan] });
 
                 // Re-calculate limit in case plan changed
-                let currentLimit = currentUser.Plan ? currentUser.Plan.dailyLimit : 5;
+                let currentLimit = (currentUser.Plan ? currentUser.Plan.dailyLimit : 5) - (currentUser.dailyUsage ?? 0);
 
                 if (currentUser.dailyUsage >= currentLimit) {
                     socket.emit('limit_reached', { message: 'Daily limit reached.' });

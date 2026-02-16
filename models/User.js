@@ -53,6 +53,21 @@ const User = sequelize.define('User', {
         type: DataTypes.DATEONLY,
         allowNull: true,
     },
+    resetOtp: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    resetOtpExpiry: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    resetOtpAttempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+}, {
+    tableName: 'Users',
+    timestamps: true,
 });
 
 export default User;

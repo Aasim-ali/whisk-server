@@ -18,7 +18,10 @@ router.get('/key', (req, res) => {
 // Create Order
 router.post('/order', async (req, res) => {
     try {
-        const { planId, userId } = req.body;
+
+        const { planId } = req.body;
+        const userId = req.user.id; // Get from authenticated user
+
 
         const plan = await Plan.findByPk(planId);
         if (!plan) {

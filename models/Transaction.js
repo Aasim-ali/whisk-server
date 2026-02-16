@@ -25,6 +25,25 @@ const Transaction = sequelize.define('Transaction', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+    userId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+            model: 'Users',
+            key: 'id'
+        }
+    },
+    planId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+            model: 'Plans',
+            key: 'id'
+        }
+    }
+}, {
+    tableName: 'Transactions',
+    timestamps: true,
 });
 
 export default Transaction;
