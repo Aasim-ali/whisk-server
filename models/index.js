@@ -2,6 +2,7 @@ import User from './User.js';
 import Plan from './Plan.js';
 import Transaction from './Transaction.js';
 import Admin from './Admin.js';
+import Contact from './Contact.js';
 
 import Session from './Session.js';
 
@@ -18,4 +19,7 @@ Plan.hasMany(User, { foreignKey: 'planId' });
 User.hasMany(Session, { foreignKey: 'userId' });
 Session.belongsTo(User, { foreignKey: 'userId' });
 
-export { User, Plan, Transaction, Admin, Session };
+User.hasMany(Contact, { foreignKey: 'userId' });
+Contact.belongsTo(User, { foreignKey: 'userId' });
+
+export { User, Plan, Transaction, Admin, Session, Contact };

@@ -7,7 +7,7 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import sequelize from './config/db.js';
-import { User, Plan, Transaction, Session } from './models/index.js';
+import { User, Plan, Transaction, Session, Contact } from './models/index.js';
 import passportConfig from './config/passport.js';
 import authRoutes from './routes/auth.js';
 import oauthRoutes from './routes/oauth.js';
@@ -16,6 +16,7 @@ import adminRoutes from './routes/admin.js';
 import plansRoutes from './routes/plans.js';
 import publicPlansRoutes from './routes/public_plans.js';
 import forgotPasswordRoutes from './routes/forgotPassword.js';
+import contactRoutes from './routes/contact.js';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/plans', plansRoutes);
 app.use('/api/plans', publicPlansRoutes);
 app.use('/api/auth/forgot-password', forgotPasswordRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.get('/api/test', (req, res) => {
     res.send('Test');
@@ -237,6 +239,25 @@ const startServer = async () => {
         // Sync models
         await sequelize.sync({ force: false, alter: true });
         console.log('Models synced...');
+
+        // Monthly cleanup: delete contact messages older than 30 days
+        const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+        const runContactCleanup = async () => {
+            try {
+                const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
+                const deleted = await Contact.destroy({
+                    where: { createdAt: { [Op.lt]: cutoff } },
+                });
+                if (deleted > 0) {
+                    console.log(`[Cleanup] Deleted ${deleted} old contact message(s).`);
+                }
+            } catch (err) {
+                console.error('[Cleanup] Error during contact cleanup:', err);
+            }
+        };
+        // Run once on startup, then every 24h
+        runContactCleanup();
+        setInterval(runContactCleanup, 24 * 60 * 60 * 1000);
 
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
