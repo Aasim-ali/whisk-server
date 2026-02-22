@@ -35,6 +35,11 @@ const Plan = sequelize.define('Plan', {
         type: DataTypes.INTEGER,
         defaultValue: 100,
     },
+    durationDays: {
+        type: DataTypes.INTEGER,
+        defaultValue: 30, // How many days the plan lasts after purchase
+        allowNull: false,
+    },
 });
 
 export default Plan;

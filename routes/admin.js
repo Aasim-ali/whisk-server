@@ -1,5 +1,5 @@
 import express from 'express';
-import { User, Transaction, Admin } from '../models/index.js';
+import { User, Transaction, Admin, Plan } from '../models/index.js';
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken';
 import { protect, authorize } from '../middleware/auth.js';
@@ -26,7 +26,7 @@ router.get('/dashboard', protect, authorize('admin'), async (req, res) => {
 
 router.get('/customers', protect, authorize('admin'), async (req, res) => {
     try {
-        const users = await User.findAll({ order: [['createdAt', 'DESC']] });
+        const users = await User.findAll({ order: [['createdAt', 'DESC']], include: [{ model: Plan, attributes: ['id', 'name'] }] });
         res.json(users);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

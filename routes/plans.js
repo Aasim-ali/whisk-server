@@ -1,13 +1,24 @@
 import express from 'express';
-import { Plan } from '../models/index.js';
+import { Plan, User } from '../models/index.js';
 import { authorize, protect } from '../middleware/auth.js';
+import sequelize from '../config/db.js';
 
 const router = express.Router();
 
-// Get all plans
+// Get all plans (with user count)
 router.get('/getPlanList', async (req, res) => {
     try {
-        const plans = await Plan.findAll({ order: [['createdAt', 'DESC']] });
+        const plans = await Plan.findAll({
+            order: [['createdAt', 'DESC']],
+            attributes: {
+                include: [
+                    [
+                        sequelize.literal(`(SELECT COUNT(*) FROM "Users" WHERE "Users"."planId" = "Plan"."id")`),
+                        'userCount'
+                    ]
+                ]
+            }
+        });
         res.json(plans);
     } catch (error) {
         console.error('Error fetching plans:', error);
@@ -33,7 +44,7 @@ router.get('/getPlanById', protect, authorize('admin'), async (req, res) => {
 // Create a new plan
 router.post('/', protect, authorize('admin'), async (req, res) => {
     try {
-        const { name, price, currency, credits, features, maxDevices, dailyLimit } = req.body;
+        const { name, price, currency, credits, features, maxDevices, dailyLimit, durationDays } = req.body;
 
         // Validation
         if (!name || !price || !credits) {
@@ -55,7 +66,8 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
             credits,
             features: features || [],
             maxDevices: maxDevices || 1,
-            dailyLimit: dailyLimit || 100
+            dailyLimit: dailyLimit,
+            durationDays: durationDays,
         });
 
         res.status(201).json({ message: 'Plan created successfully', plan });
@@ -68,7 +80,7 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
 // Update a plan
 router.put('/:id', protect, authorize('admin'), async (req, res) => {
     try {
-        const { name, price, currency, credits, features, maxDevices, dailyLimit } = req.body;
+        const { name, price, currency, credits, features, maxDevices, dailyLimit, durationDays } = req.body;
         const plan = await Plan.findByPk(req.params.id);
 
         if (!plan) {
@@ -92,6 +104,7 @@ router.put('/:id', protect, authorize('admin'), async (req, res) => {
         if (features !== undefined) plan.features = features;
         if (maxDevices !== undefined) plan.maxDevices = maxDevices;
         if (dailyLimit !== undefined) plan.dailyLimit = dailyLimit;
+        if (durationDays !== undefined) plan.durationDays = durationDays;
 
         await plan.save();
 

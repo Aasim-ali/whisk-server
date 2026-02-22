@@ -259,6 +259,30 @@ const startServer = async () => {
         runContactCleanup();
         setInterval(runContactCleanup, 24 * 60 * 60 * 1000);
 
+        // Daily plan expiry: reset planId for users whose plan has expired
+        const runPlanExpiryCleanup = async () => {
+            try {
+                const now = new Date();
+                const [count] = await User.update(
+                    { planId: null, planExpiresAt: null },
+                    {
+                        where: {
+                            planId: { [Op.ne]: null },
+                            planExpiresAt: { [Op.lt]: now },
+                        },
+                    }
+                );
+                if (count > 0) {
+                    console.log(`[PlanExpiry] Expired ${count} user plan(s) — reverted to Free Tier.`);
+                }
+            } catch (err) {
+                console.error('[PlanExpiry] Error during plan expiry cleanup:', err);
+            }
+        };
+        // Run once on startup, then every 24h
+        runPlanExpiryCleanup();
+        setInterval(runPlanExpiryCleanup, 24 * 60 * 60 * 1000);
+
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`Server running on port ${PORT}`);
         });

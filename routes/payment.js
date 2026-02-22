@@ -87,6 +87,12 @@ router.post('/verify', async (req, res) => {
         // Add credits to user and update plan
         user.credits += plan.credits;
         user.planId = plan.id;
+
+        // Set plan expiry date based on plan's durationDays
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + (plan.durationDays || 30));
+        user.planExpiresAt = expiresAt;
+
         await user.save();
 
         res.json({

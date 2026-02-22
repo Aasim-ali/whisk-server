@@ -45,6 +45,10 @@ const User = sequelize.define('User', {
         type: DataTypes.UUID,
         allowNull: true,
     },
+    planExpiresAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     dailyUsage: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
